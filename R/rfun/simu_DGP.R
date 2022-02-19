@@ -100,26 +100,38 @@ Par = DSGE2VAR.DGP1(
   A_2      <- Par$A_2
   B        <- Par$B
   
+  # weights of lambda for shock 1 and 2
+  s1 = s2 = 0.5
   
   Training <- burn
   
     # no volatility break
     # Initilization
     Y = epsilon = h = matrix(0, 3, Tob + Training)
+    
+    lambda    = rep(NA, Tob + Training)
     iv        = rep(NA, Tob + Training)
     Y[, 1]    = c(1,1,1)
     Y[, 2]    = c(1.2, 0.4, 0.9)
-    h[1,1:2]  = rnorm(2, sd = stv_sd[1])
-    h[2,1:2]  = rnorm(2, sd = stv_sd[2])
-    h[3,1:2]  = rnorm(2, sd = stv_sd[3])
+    
+    
+    h[3,1:2]  = rnorm(2, sd = stv_sd[1])
+    lambda[1:2] = rnorm(2, sd = stv_sd[2])
+
+    # h[2,1:2]  = rnorm(2, sd = stv_sd[2])
+    # h[3,1:2]  = rnorm(2, sd = stv_sd[3])
     
     # simulation of shocks
     for(i in 3:(Tob + Training)){
-        
-      h[,i]   = stv_ar %*% h[,(i-1),drop=F] + diag(stv_sd) %*% rnorm(3)
-      H       = diag(exp(h/2))
-      e_t     = rnorm(3)
-      e_t     = H %*% e_t %>% t()
+      
+      # h[,i]   = stv_ar %*% h[,(i-1),drop=F] + diag(stv_sd) %*% rnorm(3)
+      foo_lag   = matrix(c(log(h[3,(i-1)]), lambda[i-1]), nrow = 2, ncol = 1)
+      foo       = stv_ar %*%  + diag(stv_sd) %*% rnorm(2)
+      lambda[i] = foo[2]
+      h[,i]     = c(s1*exp(lambda[i]), s2*exp(lambda[i]), exp(foo[1]))
+      H_sqrt    = diag(sqrt(h[,i]))
+      e_t       = rnorm(3)
+      e_t       = H_sqrt %*% e_t %>% t()
       
       # simulation of variable values and iv
       e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
@@ -127,13 +139,16 @@ Par = DSGE2VAR.DGP1(
       epsilon[,i]    <- e_t
       iv[i]         <- phi * e_t[3] + rnorm(1, sd = eta_sd)
      
+      # i = i+1
     }
   
   
   # discard the traning data
   Y          <- Y[, -(1:Training)]        %>% t()
   epsilon    <- epsilon[, -(1:Training)]  %>% t()
+  h          <- h[, -(1:Training)]        %>% t()
   iv         <- iv[ -(1:Training)]
+  lambda     <- lambda[ -(1:Training)]
   
   # give them names
   colnames(Y)          <- c("x", "pi", "r")
@@ -143,7 +158,10 @@ Par = DSGE2VAR.DGP1(
   erg                 <- list()
   erg[["Y"]]          <- Y
   erg[["shock"]]      <- epsilon
+  erg[["h"]]          <- h
   erg[["iv"]]         <- iv
+  erg[["lambda"]]     <- lambda
+  
   
   return(erg)
 }
