@@ -93,6 +93,7 @@ Par = DSGE2VAR.DGP1(
   rho_r   = 0.5)
 
 
+# trinity with stochastic volatility
 .DGP1 <- function(Par, Tob, phi, eta_sd, stv_ar, stv_sd, burn = 1000){
   
   # DGP Parameters
@@ -162,6 +163,59 @@ Par = DSGE2VAR.DGP1(
   erg[["iv"]]         <- iv
   erg[["lambda"]]     <- lambda
   
+  
+  return(erg)
+}
+
+
+# trinity
+.DGP0 <- function(Par, Tob, phi, eta_sd, burn = 1000){
+  
+  # DGP Parameters
+  A_1      <- Par$A_1
+  A_2      <- Par$A_2
+  B        <- Par$B
+  
+  
+  Training <- burn
+  
+  # no volatility break
+  # Initilization
+  Y = epsilon = matrix(0, 3, Tob + Training)
+  
+  iv        = rep(NA, Tob + Training)
+  Y[, 1]    = c(1,1,1)
+  Y[, 2]    = c(1.2, 0.4, 0.9)
+  
+  # simulation of shocks
+  for(i in 3:(Tob + Training)){
+    
+    e_t       = rnorm(3) %>% t()
+    
+    # simulation of variable values and iv
+    e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
+    Y[, i]         <- A_1 %*% Y[, (i-1)] + A_2 %*% Y[, (i-2)] + B %*% e_t
+    epsilon[,i]    <- e_t
+    iv[i]         <- phi * e_t[3] + rnorm(1, sd = eta_sd)
+    
+    # i = i+1
+  }
+  
+  
+  # discard the traning data
+  Y          <- Y[, -(1:Training)]        %>% t()
+  epsilon    <- epsilon[, -(1:Training)]  %>% t()
+  iv         <- iv[ -(1:Training)]
+  
+  # give them names
+  colnames(Y)          <- c("x", "pi", "r")
+  colnames(epsilon)    <- c("demand", "supply", "monetary")
+  
+  # result
+  erg                 <- list()
+  erg[["Y"]]          <- Y
+  erg[["shock"]]      <- epsilon
+  erg[["iv"]]         <- iv
   
   return(erg)
 }
