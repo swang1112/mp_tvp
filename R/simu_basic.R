@@ -35,11 +35,12 @@ train_phi2= (crossprod(train_z, train_u)/train_ob) %*% solve(crossprod(train_u)/
 M_phi = sqrt(train_phi2)
 V_phi = 0.5
 
-tau_eta = 2
+tau_eta = 4
 theta_eta = 1
 
 
-train_omic = 1/.25
+train_omic = theta_eta/tau_eta
+
 
 V_a1 = solve(crossprod(train_u) * train_omic)
 M_a1 = V_a1 %*% (crossprod(train_u, train_z)* train_omic)
@@ -102,14 +103,14 @@ for (i in 1:nMC) {
   
 }
 
-par(mfrow = c(3,2), mar = c(1,4,1,1))
-plot(MC_omic, type = 'l'); abline(h = 1/.25, col = 2)
-plot(MC_phi, type = 'l'); abline(h = 1, col = 2)
-plot(MC_eta_sig2, type = 'l'); abline(h = .25, col = 2)
-plot(MC_a1[,1], type = 'l'); abline(h = -0.1996225, col = 2)
-plot(MC_a1[,2], type = 'l'); abline(h = -0.71816621, col = 2)
-plot(MC_a1[,3], type = 'l'); abline(h = 1.00020814, col = 2)
-par(mfrow = c(1,1))
+# par(mfrow = c(3,2), mar = c(1,4,1,1))
+# plot(MC_omic, type = 'l'); abline(h = 1/.25, col = 2)
+# plot(MC_phi, type = 'l'); abline(h = 1, col = 2)
+# plot(MC_eta_sig2, type = 'l'); abline(h = .25, col = 2)
+# plot(MC_a1[,1], type = 'l'); abline(h = -0.1996225, col = 2)
+# plot(MC_a1[,2], type = 'l'); abline(h = -0.71816621, col = 2)
+# plot(MC_a1[,3], type = 'l'); abline(h = 1.00020814, col = 2)
+# par(mfrow = c(1,1))
 
 
 par(mfrow = c(3,2), mar = c(4.5,1,1,1))
