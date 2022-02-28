@@ -127,7 +127,7 @@ Par = DSGE2VAR.DGP1(
       
       # h[,i]   = stv_ar %*% h[,(i-1),drop=F] + diag(stv_sd) %*% rnorm(3)
       foo_lag   = matrix(c(log(h[3,(i-1)]), lambda[i-1]), nrow = 2, ncol = 1)
-      foo       = stv_ar %*%  + diag(stv_sd) %*% rnorm(2)
+      foo       = stv_ar %*% foo_lag + diag(stv_sd) %*% rnorm(2)
       lambda[i] = foo[2]
       h[,i]     = c(s1*exp(lambda[i]), s2*exp(lambda[i]), exp(foo[1]))
       H_sqrt    = diag(sqrt(h[,i]))

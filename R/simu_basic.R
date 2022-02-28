@@ -12,7 +12,6 @@ Par$B
 # A0 in our paper
 solve(Par$B)
 
-
 # Make data ---------------------------------------------------------------
 Tob = 480 # sample size
 set.seed(1234)
