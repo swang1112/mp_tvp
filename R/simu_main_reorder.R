@@ -29,8 +29,8 @@ A_0  = solve(B_s)
 # a1' = [-0.1996225, -0.71816621, 1.00020814]
 
 write.csv(cbind(A_1_s, A_2_s) , file = '../dat/simu/simu_Bs.csv')
-write.csv(solve(B_s), file = '../dat/simu/simu_A0_inv.csv')
-write.csv(solve(A_0), file = '../dat/simu/simu_A0.csv')
+write.csv(B_s, file = '../dat/simu/simu_A0_inv.csv')
+write.csv(A_0, file = '../dat/simu/simu_A0.csv')
 
 # Set parameters of stochastic vola equation ------------------------------
 
