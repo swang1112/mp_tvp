@@ -94,54 +94,128 @@ Par = DSGE2VAR.DGP1(
 
 
 # trinity with stochastic volatility
-.DGP1 <- function(Par, Tob, phi, eta_sd, stv_ar, stv_sd, burn = 1000){
+# .DGP1 <- function(Par, Tob, phi, eta_sd, stv_ar, stv_sd, burn = 1000){
+#   
+#   # DGP Parameters
+#   A_1      <- Par$A_1
+#   A_2      <- Par$A_2
+#   B        <- Par$B
+#   
+#   # weights of lambda for shock 1 and 2
+#   s1 = s2 = 0.5
+#   
+#   Training <- burn
+#   
+#     # no volatility break
+#     # Initilization
+#     Y = epsilon = h = matrix(0, 3, Tob + Training)
+#     
+#     lambda    = rep(NA, Tob + Training)
+#     iv        = rep(NA, Tob + Training)
+#     Y[, 1]    = c(1,1,1)
+#     Y[, 2]    = c(1.2, 0.4, 0.9)
+#     
+#     
+#     h[3,1:2]  = rnorm(2, sd = stv_sd[1])
+#     lambda[1:2] = rnorm(2, sd = stv_sd[2])
+# 
+#     # h[2,1:2]  = rnorm(2, sd = stv_sd[2])
+#     # h[3,1:2]  = rnorm(2, sd = stv_sd[3])
+#     
+#     # simulation of shocks
+#     for(i in 3:(Tob + Training)){
+#       
+#       # h[,i]   = stv_ar %*% h[,(i-1),drop=F] + diag(stv_sd) %*% rnorm(3)
+#       foo_lag   = matrix(c(log(h[3,(i-1)]), lambda[i-1]), nrow = 2, ncol = 1)
+#       foo       = stv_ar %*% foo_lag + diag(stv_sd) %*% rnorm(2)
+#       lambda[i] = foo[2]
+#       h[,i]     = c(s1*exp(lambda[i]), s2*exp(lambda[i]), exp(foo[1]))
+#       H_sqrt    = diag(sqrt(h[,i]))
+#       e_t       = rnorm(3)
+#       e_t       = H_sqrt %*% e_t %>% t()
+#       
+#       # simulation of variable values and iv
+#       e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
+#       Y[, i]         <- A_1 %*% Y[, (i-1)] + A_2 %*% Y[, (i-2)] + B %*% e_t
+#       epsilon[,i]    <- e_t
+#       iv[i]         <- phi * e_t[3] + rnorm(1, sd = eta_sd)
+#      
+#       # i = i+1
+#     }
+#   
+#   
+#   # discard the traning data
+#   Y          <- Y[, -(1:Training)]        %>% t()
+#   epsilon    <- epsilon[, -(1:Training)]  %>% t()
+#   h          <- h[, -(1:Training)]        %>% t()
+#   iv         <- iv[ -(1:Training)]
+#   lambda     <- lambda[ -(1:Training)]
+#   
+#   # give them names
+#   colnames(Y)          <- c("x", "pi", "r")
+#   colnames(epsilon)    <- c("demand", "supply", "monetary")
+#   
+#   # result
+#   erg                 <- list()
+#   erg[["Y"]]          <- Y
+#   erg[["shock"]]      <- epsilon
+#   erg[["h"]]          <- h
+#   erg[["iv"]]         <- iv
+#   erg[["lambda"]]     <- lambda
+#   
+#   
+#   return(erg)
+# }
+
+
+# trinity with stochastic volatility (mp goes first)
+.DGP1b <- function(Tob, phi, eta_sd, stv_ar, stv_sd, burn = 1000){
   
   # DGP Parameters
-  A_1      <- Par$A_1
-  A_2      <- Par$A_2
-  B        <- Par$B
+  A_1      <- A_1_s
+  A_2      <- A_2_s
+  B        <- B_s
   
   # weights of lambda for shock 1 and 2
   s1 = s2 = 0.5
   
   Training <- burn
   
-    # no volatility break
-    # Initilization
-    Y = epsilon = h = matrix(0, 3, Tob + Training)
+  # no volatility break
+  # Initilization
+  Y = epsilon = h = matrix(0, 3, Tob + Training)
+  
+  lambda    = rep(NA, Tob + Training)
+  iv        = rep(NA, Tob + Training)
+  Y[, 1]    = c(1,1,1)
+  Y[, 2]    = c(1.2, 0.4, 0.9)
+  
+  
+  h[1,1:2]  = exp(rnorm(2, sd = stv_sd[1]))
+  lambda[1:2] = rnorm(2, sd = stv_sd[2])
+  
+  # h[2,1:2]  = rnorm(2, sd = stv_sd[2])
+  # h[3,1:2]  = rnorm(2, sd = stv_sd[3])
+  
+  # simulation of shocks
+  for(i in 3:(Tob + Training)){
     
-    lambda    = rep(NA, Tob + Training)
-    iv        = rep(NA, Tob + Training)
-    Y[, 1]    = c(1,1,1)
-    Y[, 2]    = c(1.2, 0.4, 0.9)
+    foo_lag   = matrix(c(log(h[1,(i-1)]), lambda[i-1]), nrow = 2, ncol = 1)
+    foo       = stv_ar %*% foo_lag + diag(stv_sd) %*% rnorm(2)
+    lambda[i] = foo[2]
+    h[,i]     = c(exp(foo[1]), s1*exp(lambda[i]), s2*exp(lambda[i]))
+    H_sqrt    = diag(sqrt(h[,i]))
+    e_t       = rnorm(3)
+    e_t       = H_sqrt %*% e_t %>% t()
     
+    # simulation of variable values and iv
+    e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
+    Y[, i]         <- A_1 %*% Y[, (i-1)] + A_2 %*% Y[, (i-2)] + B %*% e_t
+    epsilon[,i]    <- e_t
+    iv[i]         <- phi * e_t[1] + rnorm(1, sd = eta_sd)
     
-    h[3,1:2]  = rnorm(2, sd = stv_sd[1])
-    lambda[1:2] = rnorm(2, sd = stv_sd[2])
-
-    # h[2,1:2]  = rnorm(2, sd = stv_sd[2])
-    # h[3,1:2]  = rnorm(2, sd = stv_sd[3])
-    
-    # simulation of shocks
-    for(i in 3:(Tob + Training)){
-      
-      # h[,i]   = stv_ar %*% h[,(i-1),drop=F] + diag(stv_sd) %*% rnorm(3)
-      foo_lag   = matrix(c(log(h[3,(i-1)]), lambda[i-1]), nrow = 2, ncol = 1)
-      foo       = stv_ar %*% foo_lag + diag(stv_sd) %*% rnorm(2)
-      lambda[i] = foo[2]
-      h[,i]     = c(s1*exp(lambda[i]), s2*exp(lambda[i]), exp(foo[1]))
-      H_sqrt    = diag(sqrt(h[,i]))
-      e_t       = rnorm(3)
-      e_t       = H_sqrt %*% e_t %>% t()
-      
-      # simulation of variable values and iv
-      e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
-      Y[, i]         <- A_1 %*% Y[, (i-1)] + A_2 %*% Y[, (i-2)] + B %*% e_t
-      epsilon[,i]    <- e_t
-      iv[i]         <- phi * e_t[3] + rnorm(1, sd = eta_sd)
-     
-      # i = i+1
-    }
+    # i = i+1
+  }
   
   
   # discard the traning data
@@ -152,8 +226,8 @@ Par = DSGE2VAR.DGP1(
   lambda     <- lambda[ -(1:Training)]
   
   # give them names
-  colnames(Y)          <- c("x", "pi", "r")
-  colnames(epsilon)    <- c("demand", "supply", "monetary")
+  colnames(Y)          <- c("r", "x", "pi")
+  colnames(epsilon)    <- c("monetary", "demand", "supply")
   
   # result
   erg                 <- list()
@@ -167,55 +241,54 @@ Par = DSGE2VAR.DGP1(
   return(erg)
 }
 
-
 # trinity
-.DGP0 <- function(Par, Tob, phi, eta_sd, burn = 1000){
-  
-  # DGP Parameters
-  A_1      <- Par$A_1
-  A_2      <- Par$A_2
-  B        <- Par$B
-  
-  
-  Training <- burn
-  
-  # no volatility break
-  # Initilization
-  Y = epsilon = matrix(0, 3, Tob + Training)
-  
-  iv        = rep(NA, Tob + Training)
-  Y[, 1]    = c(1,1,1)
-  Y[, 2]    = c(1.2, 0.4, 0.9)
-  
-  # simulation of shocks
-  for(i in 3:(Tob + Training)){
-    
-    e_t       = rnorm(3) %>% t()
-    
-    # simulation of variable values and iv
-    e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
-    Y[, i]         <- A_1 %*% Y[, (i-1)] + A_2 %*% Y[, (i-2)] + B %*% e_t
-    epsilon[,i]    <- e_t
-    iv[i]         <- phi * e_t[3] + rnorm(1, sd = eta_sd)
-    
-    # i = i+1
-  }
-  
-  
-  # discard the traning data
-  Y          <- Y[, -(1:Training)]        %>% t()
-  epsilon    <- epsilon[, -(1:Training)]  %>% t()
-  iv         <- iv[ -(1:Training)]
-  
-  # give them names
-  colnames(Y)          <- c("x", "pi", "r")
-  colnames(epsilon)    <- c("demand", "supply", "monetary")
-  
-  # result
-  erg                 <- list()
-  erg[["Y"]]          <- Y
-  erg[["shock"]]      <- epsilon
-  erg[["iv"]]         <- iv
-  
-  return(erg)
-}
+# .DGP0 <- function(Par, Tob, phi, eta_sd, burn = 1000){
+#   
+#   # DGP Parameters
+#   A_1      <- Par$A_1
+#   A_2      <- Par$A_2
+#   B        <- Par$B
+#   
+#   
+#   Training <- burn
+#   
+#   # no volatility break
+#   # Initilization
+#   Y = epsilon = matrix(0, 3, Tob + Training)
+#   
+#   iv        = rep(NA, Tob + Training)
+#   Y[, 1]    = c(1,1,1)
+#   Y[, 2]    = c(1.2, 0.4, 0.9)
+#   
+#   # simulation of shocks
+#   for(i in 3:(Tob + Training)){
+#     
+#     e_t       = rnorm(3) %>% t()
+#     
+#     # simulation of variable values and iv
+#     e_t            <- matrix(e_t, nrow = 3, ncol = 1) # "reshape" e_t
+#     Y[, i]         <- A_1 %*% Y[, (i-1)] + A_2 %*% Y[, (i-2)] + B %*% e_t
+#     epsilon[,i]    <- e_t
+#     iv[i]         <- phi * e_t[3] + rnorm(1, sd = eta_sd)
+#     
+#     # i = i+1
+#   }
+#   
+#   
+#   # discard the traning data
+#   Y          <- Y[, -(1:Training)]        %>% t()
+#   epsilon    <- epsilon[, -(1:Training)]  %>% t()
+#   iv         <- iv[ -(1:Training)]
+#   
+#   # give them names
+#   colnames(Y)          <- c("x", "pi", "r")
+#   colnames(epsilon)    <- c("demand", "supply", "monetary")
+#   
+#   # result
+#   erg                 <- list()
+#   erg[["Y"]]          <- Y
+#   erg[["shock"]]      <- epsilon
+#   erg[["iv"]]         <- iv
+#   
+#   return(erg)
+# }
